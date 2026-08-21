@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b1016">
+  <title>Argus / Financial Research Control Room</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/styles.css">
+  <link rel="stylesheet" href="/static/overrides.css">
+  <link rel="stylesheet" href="/static/modal.css">
+  <link rel="stylesheet" href="/static/theme-fixes.css">
+  <link rel="stylesheet" href="/static/theme-responsive.css">
+  <link rel="stylesheet" href="/static/query-fix.css">
+  <link rel="stylesheet" href="/static/library-fix.css">
+  <link rel="stylesheet" href="/static/answer-fix.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand"><span class="brand-mark">A</span><span>ARGUS</span><small>RESEARCH OS</small></div>
+      <div class="workspace-label">WORKSPACE</div>
+      <nav>
+        <button class="nav-item active" data-view="desk"><i data-lucide="scan-search"></i><span>Research desk</span><kbd>⌘ 1</kbd></button>
+        <button class="nav-item" data-view="library"><i data-lucide="files"></i><span>Filing library</span><span class="nav-count">12</span></button>
+        <button class="nav-item" data-view="queue"><i data-lucide="shield-check"></i><span>Compliance queue</span><span class="nav-count warning">3</span></button>
+      </nav>
+      <div class="sidebar-rule"></div>
+      <div class="workspace-label">RECENT THREADS</div>
+      <div class="recent-list">
+        <button class="recent active" data-recent="DEMO"><span class="status-dot green"></span><span><strong>DEMO</strong><small>Revenue & liquidity profile</small></span><time>now</time></button>
+        <button class="recent" data-recent="NVDA"><span class="status-dot blue"></span><span><strong>NVDA</strong><small>10-Q risk scan</small></span><time>2h</time></button>
+        <button class="recent" data-recent="MSFT"><span class="status-dot grey"></span><span><strong>MSFT</strong><small>Debt covenant review</small></span><time>yest.</time></button>
+      </div>
+      <div class="sidebar-bottom"><div class="secure"><i data-lucide="lock-keyhole"></i><span><strong>Private workspace</strong><small>Evidence stays in your session</small></span></div><button class="icon-button" aria-label="Settings" data-modal="settings"><i data-lucide="settings-2"></i></button></div>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar"><div class="crumb"><span id="viewLabel">RESEARCH DESK</span><i data-lucide="chevron-right"></i><strong id="crumbLabel">NEW INVESTIGATION</strong></div><div class="top-actions"><span class="live-indicator"><span></span> SYSTEMS NOMINAL</span><button class="icon-button" aria-label="Notifications" data-modal="notifications"><i data-lucide="bell"></i><b></b></button><button class="avatar" aria-label="Profile" data-modal="profile">LM</button></div></header>
+      <div class="content-wrap">
+        <section class="hero-row"><div><p class="eyebrow">AUTONOMOUS FINANCIAL INTELLIGENCE <span>•</span> V.0.1</p><h1>Research with<br><em>receipts.</em></h1><p class="hero-copy">Deploy a coordinated retrieval, analysis, and compliance review against primary SEC filings.</p></div><div class="run-meta"><span class="meta-label">CURRENT THREAD</span><strong id="threadId">No active thread</strong><span id="lastUpdated">Awaiting a research brief</span></div></section>
+
+        <section class="brief-panel"><div class="panel-top"><div class="panel-title"><span class="step-no">01</span><div><span class="eyebrow">INVESTIGATION BRIEF</span><h2>What should we examine?</h2></div></div><button class="source-chip" data-modal="source"><span class="source-pulse"></span> SEC EDGAR <i data-lucide="chevron-down"></i></button></div><div class="brief-form"><div class="ticker-field"><label for="ticker">ENTITY</label><div class="ticker-input"><span>$</span><input id="ticker" value="DEMO" maxlength="12" aria-label="Company ticker"></div></div><div class="query-field"><label for="query">RESEARCH QUESTION</label><textarea id="query" rows="2" maxlength="4000" aria-label="Research question">Assess revenue momentum, operating performance, debt exposure, and disclosed risk factors.</textarea><span class="query-hint"><span>Use a focused question for better evidence</span><b id="queryCount">0 / 4000</b></span></div><button id="runBtn" class="run-button"><span>Run investigation</span><i data-lucide="arrow-up-right"></i></button></div><div class="brief-footer"><button data-modal="agents"><i data-lucide="sparkles"></i> 3 agents ready</button><button data-modal="timing"><i data-lucide="clock-3"></i> Typical run &lt; 30 sec</button><button data-modal="source"><i data-lucide="database"></i> Primary-source mode</button></div></section>
+
+        <section class="workspace-grid">
+          <div class="left-column">
+            <div class="section-heading"><div><span class="eyebrow">ORCHESTRATION</span><h2>Agent flight path</h2></div><span class="iteration" id="iteration">ITERATION 0 / 3</span></div>
+            <div class="agent-path"><div class="agent-card" data-agent="retrieve"><div class="agent-icon amber"><i data-lucide="download-cloud"></i></div><div><span class="agent-role">RETRIEVER</span><strong>Evidence acquisition</strong><small>SEC filings • Hybrid search</small></div><span class="agent-state" id="retrieveState">IDLE</span></div><div class="path-line"><span></span></div><div class="agent-card" data-agent="analyze"><div class="agent-icon cyan"><i data-lucide="sigma"></i></div><div><span class="agent-role">ANALYST</span><strong>Financial interpretation</strong><small>Metrics • Sentiment • Risks</small></div><span class="agent-state" id="analyzeState">IDLE</span></div><div class="path-line"><span></span></div><div class="agent-card" data-agent="audit"><div class="agent-icon coral"><i data-lucide="shield-check"></i></div><div><span class="agent-role">AUDITOR</span><strong>Compliance verification</strong><small>Completeness • Provenance</small></div><span class="agent-state" id="auditState">IDLE</span></div></div>
+            <div class="metrics-heading"><div><span class="eyebrow">QUANTITATIVE SNAPSHOT</span><h2>Signal extracted</h2></div><span class="evidence-count" id="evidenceCount">0 evidence chunks</span></div>
+            <div class="metric-grid"><div class="metric-card"><div class="metric-top"><span>REVENUE GROWTH</span><i data-lucide="trending-up"></i></div><strong id="growth">—</strong><small>Period over period</small><div class="mini-chart green-chart"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div><div class="metric-card"><div class="metric-top"><span>OPERATING MARGIN</span><i data-lucide="percent"></i></div><strong id="margin">—</strong><small>Operating income / revenue</small><div class="mini-chart cyan-chart"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div><div class="metric-card"><div class="metric-top"><span>DEBT / ASSETS</span><i data-lucide="scale"></i></div><strong id="debt">—</strong><small>Capital structure exposure</small><div class="risk-bar"><span id="riskBar"></span></div></div></div>
+              <section class="answer-card" data-modal="answer"><div class="answer-header"><div><span class="eyebrow">RESEARCH ANSWER</span><h2 id="answerTitle">Your answer will appear here</h2></div><span class="answer-status" id="answerStatus">WAITING</span></div><p class="answer-question" id="answerQuestion">Run an investigation to see the answer to your research question.</p><div class="answer-body"><p id="answerSummary">The analyst will summarize retrieved SEC evidence, calculate the requested signals, and list the risks it found.</p><div class="answer-facts" id="answerFacts"><span><b>Sentiment</b><strong>—</strong></span><span><b>Risks found</b><strong>—</strong></span><span><b>Evidence</b><strong>—</strong></span></div></div></section>
+            <div class="evidence-section"><div class="section-heading"><div><span class="eyebrow">SOURCE REGISTER</span><h2>Evidence ledger</h2></div><button class="text-button" data-modal="evidence">View all <i data-lucide="arrow-up-right"></i></button></div><div class="ledger" id="ledger"><div class="empty-ledger"><i data-lucide="file-search"></i><span>Run an investigation to populate the evidence ledger.</span></div></div></div>
+          </div>
+          <aside class="right-column"><div class="review-card"><div class="review-header"><div><span class="eyebrow">GOVERNANCE GATE</span><h2>Compliance review</h2></div><span class="review-status" id="reviewStatus">PENDING</span></div><div class="review-score"><div class="score-ring" id="scoreRing"><strong id="score">—</strong><small>confidence</small></div><div><span class="eyebrow">AUDIT OUTCOME</span><p id="auditSummary">A completed run will be evaluated against disclosure and provenance controls.</p></div></div><div class="audit-list" id="auditList"><div class="audit-row muted"><i data-lucide="circle-dashed"></i><span>Disclosure completeness</span><b>—</b></div><div class="audit-row muted"><i data-lucide="circle-dashed"></i><span>Evidence provenance</span><b>—</b></div><div class="audit-row muted"><i data-lucide="circle-dashed"></i><span>Risk factor reporting</span><b>—</b></div></div><button id="approveBtn" class="approve-button" disabled><i data-lucide="check"></i> Approve report</button><button id="reviseBtn" class="revise-button" disabled>Request revision</button></div><div class="activity-card"><div class="section-heading"><div><span class="eyebrow">ACTIVITY LOG</span><h2>Reasoning trace</h2></div><button class="icon-button" data-modal="activity"><i data-lucide="more-horizontal"></i></button></div><div id="activityLog" class="activity-log"><div class="activity-empty">No run events yet.</div></div></div><div class="notice"><i data-lucide="info"></i><span>Reports remain advisory until a human reviewer approves the final compliance gate.</span></div></aside>
+        </section>
+      </div>
+    </main>
+  </div>
+  <div id="toast" class="toast"></div>
+  <div id="modal" class="modal-backdrop" hidden><section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><div class="modal-header"><div><span class="eyebrow" id="modalEyebrow">ARGUS</span><h2 id="modalTitle">Panel</h2></div><button class="icon-button" data-close-modal aria-label="Close"><i data-lucide="x"></i></button></div><div id="modalBody" class="modal-body"></div></section></div>
+  <script>lucide.createIcons();</script><script src="/static/app.js?v=20260822-5"></script><script src="/static/motion.js?v=20260822-1"></script>
+</body>
+</html>
