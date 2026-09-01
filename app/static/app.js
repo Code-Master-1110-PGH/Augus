@@ -13,13 +13,45 @@ function setAgentStates(status) {
 }
 function renderLedger(count, ticker) { const ledger = $('ledger'); if (!count) { ledger.innerHTML = '<div class="empty-ledger"><i data-lucide="file-search"></i><span>Run an investigation to populate the evidence ledger.</span></div>'; lucide.createIcons(); return; } ledger.innerHTML = `<div class="ledger-item"><i data-lucide="file-text"></i><div><strong>SEC EDGAR / ${esc(ticker)} 10-K</strong><small>Primary filing evidence with preserved section metadata</small></div><code>${count} CHUNKS</code></div><div class="ledger-item"><i data-lucide="layers-3"></i><div><strong>Hybrid retrieval index</strong><small>Dense-like token rank + lexical overlap</small></div><code>VERIFIED</code></div>`; lucide.createIcons(); }
 function renderActivity(history) { const log = $('activityLog'); if (!history?.length) { log.innerHTML = '<div class="activity-empty">No run events yet.</div>'; return; } log.innerHTML = history.slice(-7).map((event) => `<div class="activity-entry"><b>${esc(String(event.node || 'SYSTEM').toUpperCase())}</b>${esc(event.status || (event.iteration ? `Iteration ${event.iteration}` : 'State updated'))}</div>`).join(''); }
+function renderNarrative(status) {
+  const narrativeCard = $('narrativeCard');
+  const narrativeContent = $('narrativeContent');
+  const descriptiveAnswer = status.descriptive_answer || '';
+  
+  if (!descriptiveAnswer) {
+    narrativeCard.hidden = true;
+    return;
+  }
+  
+  narrativeCard.hidden = false;
+  
+  // Split narrative into paragraphs and render with formatting
+  const paragraphs = descriptiveAnswer.split('\n\n').filter(p => p.trim());
+  
+  narrativeContent.innerHTML = paragraphs.map((para) => {
+    // Escape HTML and preserve paragraph structure
+    const escaped = esc(para);
+    // Highlight key terms with emphasis
+    const formatted = escaped
+      .replace(/Financial Performance Overview:/g, '<strong>Financial Performance Overview:</strong>')
+      .replace(/Risk Assessment & Disclosures:/g, '<strong>Risk Assessment & Disclosures:</strong>')
+      .replace(/Analyst Sentiment & Recommendation:/g, '<strong>Analyst Sentiment & Recommendation:</strong>')
+      .replace(/Verification Status:/g, '<strong>Verification Status:</strong>')
+      .replace(/\b(cautious|neutral|bullish|bearish)\b/gi, '<em>$1</em>')
+      .replace(/\b(revenue growth|operating margin|debt-to-assets|risk factors|compliance|disclosure)\b/gi, '<strong>$1</strong>');
+    
+    return `<p class="narrative-paragraph">${formatted}</p>`;
+  }).join('');
+  
+  lucide.createIcons();
+}
 function renderStatus(status) {
   state.status = status; $('iteration').textContent = `ITERATION ${status.iteration_count || 0} / 3`; $('evidenceCount').textContent = `${status.retrieved_documents || 0} evidence chunks`; $('lastUpdated').textContent = `Last signal ${new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`;
   const analysis = status.financial_analysis || {}; const metrics = analysis.metrics || {}; $('growth').textContent = formatMetric(metrics.revenue_growth); $('margin').textContent = formatMetric(metrics.operating_margin); $('debt').textContent = formatMetric(metrics.debt_to_assets); $('riskBar').style.width = `${Math.min(Number(metrics.debt_to_assets || 0) * 100, 100)}%`;
   const answer = status.answer || {}; $('answerTitle').textContent = status.status === 'APPROVED' ? 'Approved research answer' : status.status === 'AWAITING_HUMAN_REVIEW' ? 'Answer ready for sign-off' : status.status === 'RUNNING' ? 'Answer in progress' : 'Research answer'; $('answerStatus').textContent = status.status || 'WAITING'; $('answerQuestion').textContent = status.question || 'Run an investigation to see the answer to your research question.'; $('answerSummary').textContent = answer.summary || 'The analyst is still processing retrieved evidence.'; $('answerFacts').innerHTML = `<span><b>Sentiment</b><strong>${esc(answer.sentiment || 'pending')}</strong></span><span><b>Risks found</b><strong>${answer.risk_factors?.length || 0}</strong></span><span><b>Evidence</b><strong>${answer.evidence_chunk_ids?.length || status.retrieved_documents || 0} chunks</strong></span>`;
   const report = status.compliance_report || {}; const reviewStatus = $('reviewStatus'); reviewStatus.textContent = status.status === 'APPROVED' ? 'APPROVED' : report.status || (status.status === 'AWAITING_HUMAN_REVIEW' ? 'READY' : status.status || 'PENDING'); reviewStatus.className = `review-status ${status.status === 'APPROVED' || report.status === 'PASS' ? 'pass' : report.status === 'REVISE' ? 'fail' : ''}`; $('score').textContent = report.status === 'PASS' ? '94' : report.status ? '62' : '—'; $('auditSummary').textContent = status.status === 'APPROVED' ? 'Report approved by the human reviewer.' : report.audit_notes?.[0] || 'A completed run will be evaluated against disclosure and provenance controls.';
   const notes = report.audit_notes || []; $('auditList').innerHTML = (notes.length ? notes.slice(0, 3) : ['Disclosure completeness','Evidence provenance','Risk factor reporting']).map((note, index) => `<div class="audit-row ${report.status ? '' : 'muted'}"><i data-lucide="${report.status === 'PASS' ? 'circle-check' : 'circle-dashed'}"></i><span>${esc(note)}</span><b>${report.status === 'PASS' ? 'PASS' : 'PENDING'}</b></div>`).join('');
-  $('approveBtn').disabled = status.status !== 'AWAITING_HUMAN_REVIEW'; $('reviseBtn').disabled = status.status !== 'AWAITING_HUMAN_REVIEW'; renderLedger(status.retrieved_documents, $('ticker').value.toUpperCase()); renderActivity(status.graph_history); setAgentStates(status); lucide.createIcons();
+  $('approveBtn').disabled = status.status !== 'AWAITING_HUMAN_REVIEW'; $('reviseBtn').disabled = status.status !== 'AWAITING_HUMAN_REVIEW'; renderLedger(status.retrieved_documents, $('ticker').value.toUpperCase()); renderNarrative(status); renderActivity(status.graph_history); setAgentStates(status); lucide.createIcons();
 }
 async function poll() { if (!state.threadId) return; try { const response = await fetch(`/api/v1/research/${state.threadId}/status`); if (response.status === 404) return; if (!response.ok) throw new Error('Status unavailable'); const status = await response.json(); renderStatus(status); saveThread(status); if (status.status === 'AWAITING_HUMAN_REVIEW' || status.status === 'APPROVED') { clearInterval(state.timer); toast(status.status === 'APPROVED' ? 'Report approved.' : 'Research run reached its governance gate.'); } } catch (error) { clearInterval(state.timer); toast(error.message); } }
 function saveThread(status) { const threads = JSON.parse(localStorage.getItem('argusThreads') || '[]').filter((thread) => thread.thread_id !== status.thread_id); threads.unshift({thread_id: status.thread_id, ticker: $('ticker').value.toUpperCase(), query: $('query').value, status: status.status, updated: Date.now()}); localStorage.setItem('argusThreads', JSON.stringify(threads.slice(0, 8))); }

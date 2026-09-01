@@ -111,6 +111,7 @@ async def research_status(thread_id: str) -> ResearchStatus:
         compliance_report=report,
         financial_analysis=analysis,
         answer=answer,
+        descriptive_answer=state.get("descriptive_answer", ""),
         retrieved_documents=len(state.get("retrieved_docs", [])),
         graph_history=state.get("graph_history", []),
         human_approved=state.get("human_approved"),

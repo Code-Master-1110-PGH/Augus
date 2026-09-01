@@ -37,6 +37,7 @@ class ResearchStatus(BaseModel):
     compliance_report: dict[str, Any] = Field(default_factory=dict)
     financial_analysis: dict[str, Any] = Field(default_factory=dict)
     answer: dict[str, Any] = Field(default_factory=dict)
+    descriptive_answer: str = ""
     retrieved_documents: int = 0
     graph_history: list[dict[str, Any]] = Field(default_factory=list)
     human_approved: bool | None = None

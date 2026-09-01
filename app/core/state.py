@@ -16,6 +16,7 @@ class AgentState(TypedDict, total=False):
     retrieved_docs: list[dict[str, Any]]
     financial_analysis: dict[str, Any]
     compliance_report: dict[str, Any]
+    descriptive_answer: str
     iteration_count: int
     revision_target: Literal["retrieve", "analyze"] | None
     human_approved: bool
