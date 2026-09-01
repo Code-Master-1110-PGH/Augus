@@ -40,3 +40,24 @@ class ResearchStatus(BaseModel):
     retrieved_documents: int = 0
     graph_history: list[dict[str, Any]] = Field(default_factory=list)
     human_approved: bool | None = None
+
+
+class DocumentUploadResponse(BaseModel):
+    """Response after successful document upload and processing."""
+
+    status: str = Field(default="success")
+    message: str
+    filename: str
+    ticker: str
+    chunks_created: int
+    documents_stored: int
+    chunk_ids: list[str] = Field(default_factory=list)
+
+
+class DocumentUploadError(BaseModel):
+    """Error response for document upload failures."""
+
+    status: str = Field(default="error")
+    message: str
+    filename: str | None = None
+    error_code: str = Field(default="UPLOAD_FAILED")

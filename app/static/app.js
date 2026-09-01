@@ -91,3 +91,138 @@ document.querySelectorAll('.agent-card, .metric-card, .source-chip, .brief-foote
 document.addEventListener('keydown', (event) => { if ((event.key === 'Enter' || event.key === ' ') && event.target.matches('.agent-card, .metric-card, .source-chip, .brief-footer span, .review-status, .review-score, .audit-row, .notice')) { event.preventDefault(); event.target.click(); } });
 const queryField = $('query'); const queryCount = $('queryCount'); function updateQueryCount() { if (queryCount) queryCount.textContent = `${queryField.value.length} / 4000`; } queryField.addEventListener('input', updateQueryCount); updateQueryCount();
 $('runBtn').addEventListener('click', startResearch); $('approveBtn').addEventListener('click', () => openReviewerModal(true)); $('reviseBtn').addEventListener('click', () => openReviewerModal(false)); $('ticker').addEventListener('input', (event) => { event.target.value = event.target.value.toUpperCase().replace(/[^A-Z0-9.-]/g, ''); }); lucide.createIcons();
+
+// Document upload handlers
+const documentInput = $('documentFile');
+const uploadBtn = $('uploadBtn');
+const fileNameDisplay = $('fileNameDisplay');
+const uploadProgress = $('uploadProgress');
+
+uploadBtn.addEventListener('click', () => documentInput.click());
+
+documentInput.addEventListener('change', (event) => {
+  const files = Array.from(event.target.files || []);
+  if (files.length === 0) return;
+  
+  fileNameDisplay.classList.remove('with-files');
+  fileNameDisplay.innerHTML = '';
+  
+  files.forEach((file) => {
+    const item = document.createElement('div');
+    item.className = 'file-name-item';
+    const icon = document.createElement('i');
+    icon.setAttribute('data-lucide', 'check');
+    const span = document.createElement('span');
+    span.textContent = file.name;
+    item.appendChild(icon);
+    item.appendChild(span);
+    fileNameDisplay.appendChild(item);
+  });
+  
+  fileNameDisplay.classList.add('with-files');
+  lucide.createIcons();
+  
+  uploadBtn.textContent = '';
+  const span = document.createElement('span');
+  span.textContent = `Upload ${files.length} file${files.length > 1 ? 's' : ''}`;
+  uploadBtn.appendChild(span);
+  
+  uploadBtn.disabled = false;
+  uploadBtn.addEventListener('click', () => sendUploadRequest(files), {once: true});
+});
+
+async function sendUploadRequest(files) {
+  const ticker = ($('ticker').value || 'CUSTOM').trim().toUpperCase();
+  
+  for (const file of files) {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('company_ticker', ticker);
+    
+    uploadProgress.hidden = false;
+    const progressFill = $('progressFill');
+    const uploadStatus = $('uploadStatus');
+    progressFill.style.width = '0%';
+    uploadStatus.textContent = `Uploading ${file.name}...`;
+    uploadBtn.disabled = true;
+    
+    try {
+      const xhr = new XMLHttpRequest();
+      
+      xhr.upload.addEventListener('progress', (event) => {
+        if (event.lengthComputable) {
+          const percentComplete = (event.loaded / event.total) * 100;
+          progressFill.style.width = `${percentComplete}%`;
+        }
+      });
+      
+      xhr.addEventListener('load', () => {
+        if (xhr.status === 200) {
+          const response = JSON.parse(xhr.responseText);
+          updateUploadStatus(response, file.name);
+        } else {
+          const error = JSON.parse(xhr.responseText);
+          toast(`Upload failed: ${error.message || 'Unknown error'}`);
+          uploadProgress.hidden = true;
+          uploadBtn.disabled = false;
+          uploadBtn.textContent = '';
+          const span = document.createElement('span');
+          span.textContent = 'Upload documents';
+          uploadBtn.appendChild(span);
+          let icon = document.createElement('i');
+          icon.setAttribute('data-lucide', 'upload');
+          uploadBtn.insertBefore(icon, span);
+          lucide.createIcons();
+        }
+      });
+      
+      xhr.addEventListener('error', () => {
+        toast('Upload failed: Network error');
+        uploadProgress.hidden = true;
+        uploadBtn.disabled = false;
+      });
+      
+      xhr.open('POST', '/api/v1/research/upload');
+      xhr.send(formData);
+      
+      await new Promise((resolve) => {
+        xhr.addEventListener('load', resolve);
+        xhr.addEventListener('error', resolve);
+      });
+    } catch (error) {
+      toast(`Upload error: ${error.message}`);
+      uploadProgress.hidden = true;
+      uploadBtn.disabled = false;
+    }
+  }
+}
+
+function updateUploadStatus(response, filename) {
+  uploadProgress.hidden = true;
+  
+  if (response.status === 'success') {
+    const successMsg = document.createElement('div');
+    successMsg.className = 'upload-success';
+    successMsg.innerHTML = `<strong>${filename}</strong><br/>Created ${response.chunks_created} chunks (${response.documents_stored} documents stored)`;
+    fileNameDisplay.parentElement.insertBefore(successMsg, uploadProgress);
+    
+    toast(`${filename}: ${response.chunks_created} chunks processed`);
+    
+    // Reset after success
+    setTimeout(() => {
+      documentInput.value = '';
+      fileNameDisplay.innerHTML = '';
+      fileNameDisplay.classList.remove('with-files');
+      uploadBtn.disabled = false;
+      uploadBtn.innerHTML = '';
+      const icon = document.createElement('i');
+      icon.setAttribute('data-lucide', 'upload');
+      uploadBtn.appendChild(icon);
+      const span = document.createElement('span');
+      span.textContent = 'Upload documents';
+      uploadBtn.appendChild(span);
+      document.querySelectorAll('.upload-success, .upload-error').forEach((el) => el.remove());
+      lucide.createIcons();
+    }, 2000);
+  }
+}
