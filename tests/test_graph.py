@@ -6,7 +6,7 @@ from app.core.graph import build_graph, route_after_audit, route_after_human_rev
 
 
 def test_pass_routes_to_human_review() -> None:
-    assert route_after_audit({"compliance_report": {"status": "PASS"}, "iteration_count": 1}) == "human_review"
+    assert route_after_audit({"compliance_report": {"status": "PASS"}, "iteration_count": 1}) == "narrator"
 
 
 def test_retrieve_revision_routes_to_retriever() -> None:
@@ -16,7 +16,7 @@ def test_retrieve_revision_routes_to_retriever() -> None:
 
 def test_max_iterations_routes_to_human_review() -> None:
     state = {"compliance_report": {"status": "REVISE", "revision_target": "analyze"}, "iteration_count": 3}
-    assert route_after_audit(state) == "human_review"
+    assert route_after_audit(state) == "narrator"
 
 
 def test_human_approval_routes_to_end() -> None:
