@@ -30,9 +30,16 @@ graph = build_graph()
 STATIC_DIR = Path(__file__).parent / "static"
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
-# Initialize vector store for document uploads
-embeddings = get_embeddings()
-vector_store = HybridVectorStore(embeddings=embeddings)
+# Embeddings are loaded when the first document is uploaded so the API can start
+# without waiting for the local Hugging Face model.
+vector_store: HybridVectorStore | None = None
+
+
+def _get_vector_store() -> HybridVectorStore:
+    global vector_store
+    if vector_store is None:
+        vector_store = HybridVectorStore(embeddings=get_embeddings())
+    return vector_store
 
 
 @app.get("/", include_in_schema=False)
@@ -169,7 +176,7 @@ async def upload_research_document(
             raise ValueError("Uploaded file is empty")
         
         # Process document
-        result = await vector_store.upload_documents(
+        result = await _get_vector_store().upload_documents(
             file_bytes=file_content,
             filename=file.filename or "uploaded_document",
             company_ticker=company_ticker.upper(),
