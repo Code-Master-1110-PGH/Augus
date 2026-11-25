@@ -27,6 +27,15 @@ def test_human_revision_routes_to_retriever() -> None:
     assert route_after_human_review({"human_approved": False, "revision_target": "retrieve"}) == "retrieve"
 
 
+@pytest.fixture(autouse=True)
+def _offline_embeddings(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Avoid network HuggingFace downloads during offline unit tests."""
+    def _raise_offline():
+        raise RuntimeError("Offline test mode")
+
+    monkeypatch.setattr("app.agents.retriever_agent.get_embeddings", _raise_offline)
+
+
 @pytest.mark.asyncio
 async def test_demo_graph_reaches_human_checkpoint() -> None:
     graph = build_graph()

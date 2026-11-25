@@ -21,7 +21,7 @@ async def retrieve_node(state: dict[str, Any]) -> dict[str, Any]:
     documents = await fetch_and_chunk_filing(ticker)
     try:
         store = HybridVectorStore(embeddings=get_embeddings())
-    except (OSError, RuntimeError, ImportError):
+    except Exception:
         store = HybridVectorStore()
     store.add_documents(documents)
     queries = decompose_query(state["query"])

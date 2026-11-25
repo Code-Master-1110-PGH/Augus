@@ -1,514 +1,150 @@
-# 🤖 AUGUS - Financial Agentic RAG System
+# AUGUS: A Multi-Agent Retrieval Augmented Generation Framework for Autonomous Financial Research and Compliance
 
-<div align="center">
+[![IEEE IC3AI 2026](https://img.shields.io/badge/IEEE%20IC3AI%202026-Accepted-00629B?style=for-the-badge)](https://ieeexplore.ieee.org/)
+[![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+[![CPU Reproducible](https://img.shields.io/badge/Compute-100%25%20CPU%20Reproducible-2EA44F?style=for-the-badge)](reproduce.py)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE)
 
-[![Python](https://img.shields.io/badge/Python-3.13-blue?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-green?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
-[![LangGraph](https://img.shields.io/badge/LangGraph-Multi--Agent-purple?style=for-the-badge)](https://langgraph.dev/)
-[![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-Passing-brightgreen?style=for-the-badge)](tests/)
+**Authors:** Mridul Mishra, Aman Bhardwaj, Ashutosh Pal, Dr. Deepali Dev
 
-**Autonomous Financial Research Engine powered by AI Agents**
-
-[Features](#✨-features) • [Quick Start](#🚀-quick-start) • [Architecture](#🏗️-architecture) • [API](#📡-api-endpoints) • [Contributing](#🤝-contributing)
-
-</div>
+Official reproducible implementation of **AUGUS**, a 5-agent CPU-reproducible framework for grounded financial question answering, deterministic symbolic execution, and auditable compliance gating on SEC filings ([FinQA](https://github.com/czyssrs/FinQA)).
 
 ---
 
-## ✨ Features
+## Architecture
 
-<table>
-  <tr>
-    <td width="50%">
-      <h3>🔍 Multi-Agent Analysis</h3>
-      <ul>
-        <li>Analyst Agent for deep financial insights</li>
-        <li>Auditor Agent for compliance verification</li>
-        <li>Retriever Agent for intelligent document sourcing</li>
-      </ul>
-    </td>
-    <td width="50%">
-      <h3>📊 Comprehensive Tools</h3>
-      <ul>
-        <li>SEC API integration for real-time filings</li>
-        <li>Advanced financial calculations</li>
-        <li>Vector-based document retrieval</li>
-      </ul>
-    </td>
-  </tr>
-  <tr>
-    <td width="50%">
-      <h3>🎯 RAG Pipeline</h3>
-      <ul>
-        <li>LangGraph state management</li>
-        <li>Qdrant vector database</li>
-        <li>Semantic document search</li>
-      </ul>
-    </td>
-    <td width="50%">
-      <h3>✅ Quality Assurance</h3>
-      <ul>
-        <li>RAGAS evaluation framework</li>
-        <li>Human-in-the-loop approval</li>
-        <li>Compliance reporting</li>
-      </ul>
-    </td>
-  </tr>
-</table>
+AUGUS decomposes financial research and verification into five specialized agents with deterministic provenance tracking and a confidence-gated compliance release policy:
+
+```mermaid
+flowchart LR
+    Q["Financial Query & SEC Filing"] --> P1["1. Evidence Parser<br/>(table_i / text_j units, year filter)"]
+    Q --> P2["2. Planner Agent<br/>(TF-IDF 1-3g + LogReg C=4)<br/>template, pi_t, query years"]
+    P1 --> R1["3. Retriever Agent<br/>(BM25 + TF-IDF min-max, alpha=0.5)"]
+    R1 --> R2["4. Reranker Agent<br/>(15-feature GBT, top-5 units)"]
+    P2 --> A1["5a. Analyst Agent<br/>(26-feature GBT p0, p1 + propose())<br/>Deterministic Symbolic Executor"]
+    R2 --> A1
+    A1 --> C1{"5b. Compliance Agent<br/>1. Operand Grounding<br/>2. Temporal Coherence<br/>3. kappa = pi_t * p0 * p1 >= tau"}
+    P2 --> C1
+    C1 -- "All Checks Pass" --> OUT["RELEASED Answer +<br/>SHA-256 JSONL Audit Log"]
+    C1 -- "Check Fails" --> ABS["ABSTAIN (Reason Code) +<br/>SHA-256 JSONL Audit Log"]
+```
+
+### Module Overview
+
+| Component | Module | Specification |
+| :--- | :--- | :--- |
+| **Evidence Parser** | [`augus/parser.py`](augus/parser.py) | Preserves FinQA `table_i` / `text_j` indices, row labels, column headers, ~60-char text context; filters decimal-free integers in `[1980, 2039]` as years. |
+| **Planner Agent** | [`augus/planner.py`](augus/planner.py) | Word 1–3 gram TF-IDF + Logistic Regression (`C=4`) classifying into `ratio`, `percent change`, `difference`, `sum`, `product`, `other`; extracts question years. |
+| **Retriever Agent** | [`augus/retriever.py`](augus/retriever.py) | BM25 ($k_1=1.5, b=0.75$) and TF-IDF cosine similarity, min-max normalized per filing and fused with $\alpha=0.5$. |
+| **Reranker Agent** | [`augus/reranker.py`](augus/reranker.py) | 15-feature Gradient Boosted Trees (`300` rounds, max `31` leaves, $\eta=0.08$) returning top-5 evidence units. |
+| **Analyst Agent** | [`augus/analyst.py`](augus/analyst.py) | Modular `propose()` interface with 26 operand features, out-of-fold GBT role scorers ($p_0, p_1$; `400` rounds, `lr=0.06`, `L2=1.0`), and deterministic symbolic executor. |
+| **Compliance Agent** | [`augus/compliance.py`](augus/compliance.py) | Computes $\kappa = \pi_t \cdot p_0(c_{i^*}) \cdot p_1(c_{j^*})$, enforces grounding, temporal coherence, and $\kappa \ge \tau$, and writes SHA-256 JSONL audit logs. |
 
 ---
 
-## 🚀 Quick Start
+## Quickstart
 
-### Prerequisites
-
-- **Python 3.13+**
-- **Docker & Docker Compose** (optional, for containerized deployment)
-- **Git** for version control
-
-### Installation
-
-#### Option 1: Local Setup
+### 1. Install Dependencies
 
 ```bash
-# Clone the repository
-git clone https://github.com/Code-Master-1110-PGH/Augus.git
-cd Augus
-
-# Create virtual environment
-python -m venv .venv
-
-# Activate virtual environment (Windows)
-.\.venv\Scripts\Activate.ps1
-# macOS/Linux
-source .venv/bin/activate
-
-# Install dependencies
 pip install -r requirements.txt
 ```
 
-#### Option 2: Docker Setup
+### 2. Run Unit Tests
 
 ```bash
-# Build and run with Docker Compose
-docker-compose up -d
-
-# Access the application
-# Web UI: http://localhost:8000
-# API Docs: http://localhost:8000/docs
+pytest -v
 ```
 
-### Running the Application
+### 3. Reproduce All Paper Benchmarks & Figures (CPU-only)
 
 ```bash
-# Activate virtual environment (if not already activated)
-source .venv/bin/activate  # Windows: .\.venv\Scripts\Activate.ps1
+python reproduce.py --seed 42
+```
 
-# Start the FastAPI server
+`reproduce.py` automatically downloads the official MIT-licensed FinQA splits (`train.json`: 6,251 / `dev.json`: 883 / `test.json`: 1,147) into `data/finqa/`, trains all agents with `--seed 42`, tunes $\tau$ on FinQA `dev`, evaluates retrieval, ablations, and the falsified-operand grounding stress test on FinQA `test`, and writes all tables, audit logs, and figures to [`results/`](results/).
+
+---
+
+## Reproduced Benchmarks (FinQA Test, `n = 1,147`, `--seed 42`)
+
+All numbers below are generated directly by [`reproduce.py`](reproduce.py) and saved in [`results/tables.md`](results/tables.md) and [`results/summary.json`](results/summary.json).
+
+### Table 1: Retrieval Performance on FinQA Test Split (`n = 1,147`)
+
+| Method | R@1 (%) | R@3 (%) | R@5 (%) | Full@5 (%) | MRR |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| BM25 ($k_1=1.5, b=0.75$) | 52.92 | 77.24 | 87.01 | 62.51 | 0.6726 |
+| TF-IDF Cosine | 48.30 | 73.50 | 83.44 | 59.72 | 0.6317 |
+| Hybrid Fusion ($\alpha=0.5$) | 51.61 | 77.16 | 86.40 | 62.86 | 0.6631 |
+| **Hybrid + GBT Reranker** | **79.95** | **93.81** | **97.47** | **80.56** | **0.8752** |
+
+### Table 2: End-to-End Accuracy, Ablations & Compliance Gate (FinQA Test)
+
+_Compliance threshold tuned on FinQA dev: $\tau = 0.1300$_
+
+| System Variant | Overall Acc (%) | Selective Acc (%) | 95% Bootstrap CI | McNemar $p$ vs. Baseline | Coverage (%) | CPU ms/query |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| Single-agent baseline | 4.97 | 5.07 | [3.84, 6.28] | — | 98.08 | 22.83 |
+| AUGUS w/o reranker | 19.70 | 28.61 | [17.52, 22.06] | 1.25e-37 | 68.88 | 19.95 |
+| AUGUS BM25-only | 25.11 | 35.82 | [22.58, 27.55] | 1.84e-51 | 70.10 | 33.77 |
+| AUGUS w/o planner | 7.85 | 7.85 | [6.45, 9.33] | 3.76e-05 | 100.00 | 41.25 |
+| AUGUS full | 25.11 | 35.82 | [22.58, 27.55] | 1.84e-51 | 70.10 | 36.38 |
+| Gold-evidence oracle | 32.26 | 47.01 | [29.47, 34.87] | 3.97e-77 | 68.61 | 2249.08 |
+| **AUGUS + Compliance gate** | 14.56 | **60.51** | [12.64, 16.56] | 1.60e-17 | 24.06 | 3233.84 |
+
+### Table 3: Falsified-Operand Grounding Stress Test
+
+| Metric | Value |
+| :--- | :---: |
+| Executable Test Programs Evaluated | 821 |
+| Perturbed Operands Checked ($\times \{0.9, 0.95, 0.99, 1.01, 1.05, 1.1\}$) | 819 |
+| Perturbation Detection Rate (Top-5 Evidence) | **100.00%** |
+| Perturbation Detection Rate (Full Filing) | **100.00%** |
+| False-Alarm Rate on Clean Gold Operands (Top-5) | 16.08% |
+| False-Alarm Rate on Clean Gold Operands (Full Filing) | 8.77% |
+
+---
+
+## Figures
+
+| Retrieval Recall@k | Accuracy by Reasoning Template | Risk-Coverage Curve |
+| :---: | :---: | :---: |
+| ![Recall@k](results/recall_at_k.png) | ![Accuracy by Template](results/accuracy_by_template.png) | ![Risk-Coverage](results/risk_coverage.png) |
+
+Sample SHA-256 compliance audit log entries are recorded in [`results/audit_log_sample.jsonl`](results/audit_log_sample.jsonl).
+
+---
+
+## Limitations & Future Work
+
+- **Program Coverage**: AUGUS currently executes single-step binary templates (`ratio`, `difference`, `sum`, `product`) and two-step `percent change` programs; multi-step compositions and constant-based programs (which account for 30.25% of the FinQA test set) are routed to `other` and safely abstained.
+- **Domain Scope**: Experiments evaluate English US SEC filings (10-K/10-Q) from FinQA; cross-lingual and non-GAAP accounting standards require domain-specific parser rules.
+- **Modular LLM Integration**: The Analyst Agent's `propose()` interface is designed as a drop-in boundary—future work can replace the GBT operand scorer with an LLM program generator while retaining the exact same deterministic Compliance Agent gate and SHA-256 audit trail.
+
+---
+
+## Interactive Web Runtime (Optional)
+
+The repository also includes a FastAPI + LangGraph interactive web workspace under [`app/`](app/):
+
+```bash
 python -m uvicorn app.main:app --reload
-
-# Access the application
-# 🌐 Web Interface: http://127.0.0.1:8000
-# 📚 API Documentation: http://127.0.0.1:8000/docs
-# 💚 Health Check: http://127.0.0.1:8000/health
 ```
 
 ---
 
-## 🏗️ Architecture
+## Citation
 
-### System Design
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    AUGUS Architecture                        │
-├─────────────────────────────────────────────────────────────┤
-│                                                               │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐       │
-│  │   Retriever  │  │   Analyst    │  │   Auditor    │       │
-│  │    Agent     │  │   Agent      │  │   Agent      │       │
-│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘       │
-│         │                 │                  │                │
-│         └─────────────────┼──────────────────┘                │
-│                           │                                    │
-│                      ┌────▼─────┐                             │
-│                      │   Graph   │                             │
-│                      │  Manager  │                             │
-│                      └────┬─────┘                             │
-│                           │                                    │
-│         ┌─────────────────┼─────────────────┐                │
-│         │                 │                 │                │
-│    ┌────▼────┐    ┌──────▼──────┐    ┌────▼────┐           │
-│    │   SEC   │    │  Vector DB  │    │ Finance │           │
-│    │   API   │    │   (Qdrant)  │    │ Calc    │           │
-│    └────┬────┘    └─────────────┘    └────┬────┘           │
-│         │                                  │                │
-│         └──────────────┬───────────────────┘                │
-│                        │                                    │
-│                   ┌────▼────────┐                           │
-│                   │   FastAPI   │                            │
-│                   │  (REST API) │                            │
-│                   └─────────────┘                            │
-│                                                               │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### Project Structure
-
-```
-Augus/
-├── 📄 README.md                 # Project documentation
-├── 📦 requirements.txt          # Python dependencies
-├── 🐳 Dockerfile               # Docker configuration
-├── 🔧 docker-compose.yml       # Docker Compose orchestration
-│
-├── app/                         # Main application directory
-│   ├── __init__.py
-│   ├── 🎛️ config.py            # Configuration management
-│   ├── 🚀 main.py              # FastAPI application entry
-│   │
-│   ├── agents/                  # AI Agent implementations
-│   │   ├── analyst_agent.py     # Financial analysis agent
-│   │   ├── auditor_agent.py     # Compliance auditor agent
-│   │   └── retriever_agent.py   # Document retriever agent
-│   │
-│   ├── core/                    # Core components
-│   │   ├── graph.py             # LangGraph workflow definition
-│   │   ├── providers.py         # LLM & tool providers
-│   │   └── state.py             # State management schema
-│   │
-│   ├── tools/                   # Integrated tools
-│   │   ├── sec_tools.py         # SEC API integration
-│   │   ├── finance_calc.py      # Financial calculations
-│   │   └── vector_store.py      # Vector database operations
-│   │
-│   ├── schemas/                 # Data models
-│   │   └── models.py            # Pydantic models
-│   │
-│   ├── evaluation/              # Quality assurance
-│   │   └── ragas_eval.py        # RAGAS evaluation framework
-│   │
-│   └── static/                  # Frontend assets
-│       ├── index.html           # Main workspace UI
-│       ├── landing.html         # Landing page
-│       ├── login.html           # Authentication
-│       ├── app.js               # Main application logic
-│       └── styles.css           # Styling
-│
-└── tests/                       # Unit & integration tests
-    ├── test_graph.py            # Graph workflow tests
-    └── test_tools.py            # Tool integration tests
-```
-
----
-
-## 📡 API Endpoints
-
-### Research Operations
-
-#### Start Research
-```http
-POST /api/v1/research/start
-Content-Type: application/json
-
-{
-  "query": "What are the financial risks in Apple?",
-  "company_ticker": "AAPL"
-}
-
-Response (202 Accepted):
-{
-  "thread_id": "550e8400-e29b-41d4-a716-446655440000"
+```bibtex
+@inproceedings{mishra2026augus,
+  title     = {AUGUS: A Multi-Agent Retrieval Augmented Generation Framework for Autonomous Financial Research and Compliance},
+  author    = {Mishra, Mridul and Bhardwaj, Aman and Pal, Ashutosh and Dev, Deepali},
+  booktitle = {Proceedings of the IEEE International Conference on Computing, Communication, Control, and AI (IC3AI)},
+  year      = {2026}
 }
 ```
 
-#### Get Research Status
-```http
-GET /api/v1/research/{thread_id}/status
+## License
 
-Response (200 OK):
-{
-  "thread_id": "550e8400-e29b-41d4-a716-446655440000",
-  "question": "What are the financial risks in Apple?",
-  "status": "AWAITING_HUMAN_REVIEW | APPROVED | RUNNING",
-  "iteration_count": 3,
-  "financial_analysis": { ... },
-  "compliance_report": { ... },
-  "retrieved_documents": 12,
-  "graph_history": [ ... ]
-}
-```
-
-#### Resume Research (Human Approval)
-```http
-POST /api/v1/research/{thread_id}/resume
-Content-Type: application/json
-
-{
-  "approved": true,
-  "reviewer": "analyst@company.com",
-  "comment": "Analysis looks good, ready for publication"
-}
-```
-
-### System Operations
-
-#### Health Check
-```http
-GET /health
-
-Response (200 OK):
-{
-  "status": "ok"
-}
-```
-
----
-
-## 🔧 Configuration
-
-### Environment Variables
-
-Create a `.env` file in the root directory:
-
-```env
-# LLM Configuration
-GROQ_API_KEY=your_groq_api_key
-OPENAI_API_KEY=your_openai_api_key
-HUGGINGFACE_API_KEY=your_huggingface_token
-
-# SEC API
-SEC_API_KEY=your_sec_api_key
-
-# Qdrant Vector Database
-QDRANT_URL=http://localhost:6333
-QDRANT_API_KEY=your_qdrant_key
-
-# LangSmith (optional)
-LANGSMITH_API_KEY=your_langsmith_key
-LANGSMITH_PROJECT=augus-project
-```
-
-### Local Development (No API Keys)
-
-The application works out-of-the-box with DEMO ticker:
-
-```bash
-# Run with DEMO data (uses offline SEC filing fixture)
-python -m uvicorn app.main:app --reload
-
-# Query DEMO ticker (no keys required)
-curl -X POST http://localhost:8000/api/v1/research/start \
-  -H "Content-Type: application/json" \
-  -d '{"query":"revenue growth","company_ticker":"DEMO"}'
-```
-
----
-
-## 🚀 Deployment
-
-### Docker Deployment
-
-```bash
-# Build the Docker image
-docker build -t augus:latest .
-
-# Run with Docker
-docker run -p 8000:8000 \
-  -e GROQ_API_KEY=your_key \
-  -e SEC_API_KEY=your_key \
-  augus:latest
-```
-
-### Docker Compose
-
-```bash
-# Start all services
-docker-compose up -d
-
-# View logs
-docker-compose logs -f app
-
-# Stop services
-docker-compose down
-```
-
----
-
-## 🧪 Testing
-
-```bash
-# Run all tests
-pytest
-
-# Run with coverage
-pytest --cov=app tests/
-
-# Run specific test file
-pytest tests/test_graph.py -v
-
-# Run tests with async support
-pytest tests/ -v --asyncio-mode=auto
-
-# Run evaluation
-python -m app.evaluation.ragas_eval
-```
-
----
-
-## 📊 Performance Monitoring
-
-### Key Metrics
-
-- **Response Time**: Track API latency
-- **Agent Decisions**: Monitor agent node execution
-- **Document Retrieval**: Vector DB query performance
-- **Human Review Rate**: Track approval bottlenecks
-
-### LangSmith Integration
-
-The project integrates with LangSmith for LLM observability:
-
-```bash
-# Enable in .env
-LANGSMITH_API_KEY=your_token
-LANGSMITH_TRACING=true
-```
-
----
-
-## 💡 Best Practices
-
-### Agent Development
-
-- Use deterministic calculations (don't rely on LLM for arithmetic)
-- Call `get_reasoning_model()` or `get_fast_model()` for qualitative reasoning
-- Implement proper error handling in agent nodes
-- Always include compliance gates for sensitive operations
-
-### Local Embeddings
-
-- Uses Hugging Face embeddings (`sentence-transformers/all-MiniLM-L6-v2`)
-- No OpenAI embedding model required
-- Qdrant vector database for similarity search
-- In-memory adapter by default (set `FINANCIAL_VECTOR_BACKEND=qdrant` for production)
-
-### Production Deployment
-
-- Replace `MemorySaver` with Postgres checkpointer
-- Put API behind durable task queue
-- Enable LangSmith tracing for observability
-- Use environment variables for all secrets
-
----
-
-## 🤝 Contributing
-
-We welcome contributions! Here's how you can help:
-
-### Getting Started
-
-1. **Fork** the repository
-2. **Create** a feature branch: `git checkout -b feature/amazing-feature`
-3. **Make** your changes
-4. **Commit** with clear messages: `git commit -m 'Add amazing feature'`
-5. **Push** to your branch: `git push origin feature/amazing-feature`
-6. **Open** a Pull Request
-
-### Development Guidelines
-
-- Follow PEP 8 style guide
-- Write docstrings for all functions
-- Add unit tests for new features
-- Update documentation
-- Ensure all tests pass before submitting PR
-
-### Code Quality Tools
-
-```bash
-# Format code
-black app/ tests/
-
-# Lint code
-pylint app/
-
-# Type checking
-mypy app/
-
-# Security check
-bandit -r app/
-```
-
----
-
-## 📚 Documentation
-
-### Agent Architecture
-
-Each agent implements the `BaseAgent` pattern with:
-- **Input Processing**: Query/document normalization
-- **Tool Invocation**: Dynamic tool selection
-- **Output Formatting**: Structured response generation
-- **Error Handling**: Graceful degradation
-
-### Vector Embeddings
-
-- **Model**: Sentence Transformers (all-MiniLM-L6-v2)
-- **Database**: Qdrant (vector similarity search)
-- **Chunk Size**: 512 tokens with 100-token overlap
-- **Similarity Threshold**: 0.75
-
----
-
-## 🔐 Security
-
-- ✅ Environment-based secrets management
-- ✅ Input validation on all endpoints
-- ✅ Rate limiting via FastAPI middleware
-- ✅ CORS configuration for web clients
-- ✅ API authentication ready (implementable)
-
----
-
-## 📈 Roadmap
-
-- [ ] **WebSocket Support** - Real-time research updates
-- [ ] **Multi-Language Support** - International research
-- [ ] **Advanced Caching** - Redis integration
-- [ ] **Custom Model Fine-tuning** - Domain-specific models
-- [ ] **Collaborative Tools** - Team research workflows
-- [ ] **Research History** - Full audit trail
-- [ ] **Export Formats** - PDF, Excel, JSON exports
-- [ ] **Scheduled Research** - Cron-based analysis
-
----
-
-## 📞 Support & Contact
-
-- 📧 **Email**: support@augus.dev
-- 🐦 **Twitter**: [@AugusAI](https://twitter.com)
-- 💬 **Discord**: [Join Community](https://discord.gg)
-- 📖 **Docs**: [Full Documentation](https://docs.augus.dev)
-
----
-
-## 📄 License
-
-This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
-
----
-
-## 🌟 Star History
-
-If you find this project helpful, please consider starring it! ⭐
-
----
-
-<div align="center">
-
-### Built with ❤️ by the AUGUS Team
-
-**[Website](https://augus.dev) • [Blog](https://blog.augus.dev) • [Twitter](https://twitter.com/AugusAI) • [GitHub](https://github.com/Code-Master-1110-PGH/Augus)**
-
-</div>
+This project is licensed under the [MIT License](LICENSE).

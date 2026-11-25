@@ -1,0 +1,120 @@
+{
+  "seed": 42,
+  "dataset_sizes": {
+    "train": 6251,
+    "dev": 883,
+    "test": 1147
+  },
+  "tau": 0.13,
+  "retrieval": {
+    "bm25": {
+      "r1": 52.92,
+      "r3": 77.24,
+      "r5": 87.01,
+      "full5": 62.51,
+      "mrr": 0.6726
+    },
+    "tfidf": {
+      "r1": 48.3,
+      "r3": 73.5,
+      "r5": 83.44,
+      "full5": 59.72,
+      "mrr": 0.6317
+    },
+    "hybrid": {
+      "r1": 51.61,
+      "r3": 77.16,
+      "r5": 86.4,
+      "full5": 62.86,
+      "mrr": 0.6631
+    },
+    "hybrid_reranker": {
+      "r1": 79.95,
+      "r3": 93.81,
+      "r5": 97.47,
+      "full5": 80.56,
+      "mrr": 0.8752
+    }
+  },
+  "ablations": [
+    {
+      "name": "Single-agent baseline",
+      "acc_all": 4.97,
+      "acc_released": 5.07,
+      "ci_low": 3.84,
+      "ci_high": 6.28,
+      "p_value": null,
+      "coverage": 98.08,
+      "ms_per_query": 22.83
+    },
+    {
+      "name": "AUGUS w/o reranker",
+      "acc_all": 19.7,
+      "acc_released": 28.61,
+      "ci_low": 17.52,
+      "ci_high": 22.06,
+      "p_value": 1.2505817192438335e-37,
+      "coverage": 68.88,
+      "ms_per_query": 19.95
+    },
+    {
+      "name": "AUGUS BM25-only",
+      "acc_all": 25.11,
+      "acc_released": 35.82,
+      "ci_low": 22.58,
+      "ci_high": 27.55,
+      "p_value": 1.8433221776455786e-51,
+      "coverage": 70.1,
+      "ms_per_query": 33.77
+    },
+    {
+      "name": "AUGUS w/o planner",
+      "acc_all": 7.85,
+      "acc_released": 7.85,
+      "ci_low": 6.45,
+      "ci_high": 9.33,
+      "p_value": 3.7606121325417525e-05,
+      "coverage": 100.0,
+      "ms_per_query": 41.25
+    },
+    {
+      "name": "AUGUS full",
+      "acc_all": 25.11,
+      "acc_released": 35.82,
+      "ci_low": 22.58,
+      "ci_high": 27.55,
+      "p_value": 1.8433221776455786e-51,
+      "coverage": 70.1,
+      "ms_per_query": 36.38
+    },
+    {
+      "name": "Gold-evidence oracle",
+      "acc_all": 32.26,
+      "acc_released": 47.01,
+      "ci_low": 29.47,
+      "ci_high": 34.87,
+      "p_value": 3.9655663169954965e-77,
+      "coverage": 68.61,
+      "ms_per_query": 2249.08
+    },
+    {
+      "name": "AUGUS + Compliance gate",
+      "acc_all": 14.56,
+      "acc_released": 60.51,
+      "ci_low": 12.64,
+      "ci_high": 16.56,
+      "p_value": 1.5967229541010385e-17,
+      "coverage": 24.06,
+      "ms_per_query": 3233.84
+    }
+  ],
+  "grounding_audit": {
+    "n_executable_test": 821,
+    "n_clean_checked": 821,
+    "n_perturbed_checked": 819,
+    "detection_rate_top5": 100.0,
+    "detection_rate_full": 100.0,
+    "false_alarm_rate_top5": 16.08,
+    "false_alarm_rate_full": 8.77
+  }
+}

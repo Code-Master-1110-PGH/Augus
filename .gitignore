@@ -1,5 +1,11 @@
 .venv/
+.venv-1/
+venv/
 __pycache__/
 .pytest_cache/
 .env
 *.pyc
+*.pyo
+data/
+*.pkl
+*.joblib
